@@ -182,6 +182,9 @@
   .form-textarea            { resize: vertical; min-height: 72px; }
   .form-hint                { font-size: 11px; color: #6b778c; margin-top: 4px; }
   .form-hint--warn          { color: #974f0c; }
+  .form-hint--success       { color: #006644; }
+  .input-with-btn           { display: flex; gap: 8px; align-items: center; }
+  .input-with-btn .form-input { flex: 1; }
   .alert-warn               { display: flex; align-items: flex-start; gap: 8px; background: #fff8e1; border: 1px solid #ffe082; border-left: 3px solid #f6a623; border-radius: 4px; padding: 8px 12px; font-size: 12px; color: #7d5a00; line-height: 1.4; }
   .alert-warn svg           { flex-shrink: 0; margin-top: 1px; }
   .form-error               { font-size: 11px; color: #de350b; margin-top: 4px; display: none; }
@@ -627,6 +630,20 @@
             <input id="detail-root-path" class="form-input" type="text" maxlength="300" placeholder="/sftp/company_folder_name/outbound/" oninput="GENERAL_DIRTY=true" />
             <div class="form-hint">Base path for all file deliveries under this config. Must start with <code>/sftp/</code> and end with <code>/</code>.<br>Suggested format: <code>/sftp/company_folder_name/outbound/</code></div>
             <div class="form-error" id="detail-root-path-error"></div>
+          </div>
+          <div class="form-field">
+            <label class="form-label">Salesforce ID <span class="required">*</span></label>
+            <div class="input-with-btn">
+              <input id="detail-sf-id" class="form-input" type="text" maxlength="100" oninput="GENERAL_DIRTY=true;clearSfValidation()" />
+              <button class="btn btn-default btn-sm" id="sf-validate-btn" onclick="validateSfId()">Validate</button>
+            </div>
+            <div class="form-hint d-none" id="sf-validate-status"></div>
+            <div class="form-error" id="detail-sf-id-error"></div>
+          </div>
+          <div class="form-field">
+            <label class="form-label">Salesforce Name <span class="required">*</span></label>
+            <input id="detail-sf-name" class="form-input" type="text" maxlength="200" oninput="GENERAL_DIRTY=true" />
+            <div class="form-error" id="detail-sf-name-error"></div>
           </div>
         </div>
 
@@ -1826,6 +1843,9 @@ function openNewConfig() {
 
   el('detail-name').value      = '';
   el('detail-root-path').value = '';
+  el('detail-sf-id').value     = '';
+  el('detail-sf-name').value   = '';
+  clearSfValidation();
   ['detail-name-error','detail-type-error','entity-type-error','detail-root-path-error'].forEach(id =>
     el(id).classList.remove('visible'));
 
@@ -2118,6 +2138,9 @@ function openConfigDetail(configId) {
 
   el('detail-name').value      = cfg.name;
   el('detail-root-path').value = cfg.rootPath || '';
+  el('detail-sf-id').value     = cfg.sfId   || '';
+  el('detail-sf-name').value   = cfg.sfName || '';
+  clearSfValidation();
   el('detail-name-error').classList.remove('visible');
   el('detail-type-error').classList.remove('visible');
   el('entity-type-error').classList.remove('visible');
@@ -2251,17 +2274,57 @@ function updateEntityTypeOptions(cfgType) {
   }
 }
 
+function clearSfValidation() {
+  const status = el('sf-validate-status');
+  status.textContent = '';
+  status.className = 'form-hint d-none';
+}
+
+function validateSfId() {
+  const sfId  = el('detail-sf-id').value.trim();
+  const sfErr = el('detail-sf-id-error');
+  const status = el('sf-validate-status');
+  const btn   = el('sf-validate-btn');
+
+  sfErr.classList.remove('visible');
+  if (!sfId) { showErr(sfErr, 'Salesforce ID is required.'); return; }
+
+  btn.disabled    = true;
+  btn.textContent = 'Validating…';
+  status.textContent = '';
+  status.className = 'form-hint d-none';
+
+  setTimeout(() => {
+    btn.disabled    = false;
+    btn.textContent = 'Validate';
+    // Simulate: IDs starting with "ERR" are not found
+    if (sfId.toUpperCase().startsWith('ERR')) {
+      status.textContent = '✗ ID not found in Salesforce.';
+      status.className = 'form-hint form-hint--warn';
+    } else {
+      status.textContent = '✓ Verified';
+      status.className = 'form-hint form-hint--success';
+    }
+    status.classList.remove('d-none');
+  }, 1000);
+}
+
 function saveSetupTab(btn) {
   const name       = el('detail-name').value.trim();
   const type       = el('detail-type-select').value;
   const entityType = el('entity-type-select').value;
   const rootPath   = el('detail-root-path').value.trim();
+  const sfId       = el('detail-sf-id').value.trim();
+  const sfName     = el('detail-sf-name').value.trim();
   const nameErr     = el('detail-name-error');
   const typeErr     = el('detail-type-error');
   const etErr       = el('entity-type-error');
   const rootPathErr = el('detail-root-path-error');
+  const sfIdErr     = el('detail-sf-id-error');
+  const sfNameErr   = el('detail-sf-name-error');
   nameErr.classList.remove('visible'); typeErr.classList.remove('visible');
   etErr.classList.remove('visible');   rootPathErr.classList.remove('visible');
+  sfIdErr.classList.remove('visible'); sfNameErr.classList.remove('visible');
 
   if (!name) { showErr(nameErr,'Name is required.'); return; }
   if (!/^[A-Za-z0-9_-]+$/.test(name)) { showErr(nameErr,'Allowed: A-Z, a-z, 0-9, underscore, hyphen.'); return; }
@@ -2279,16 +2342,18 @@ function saveSetupTab(btn) {
   if (!rootPath) { showErr(rootPathErr,'Base path is required.'); return; }
   if (!rootPath.startsWith('/sftp/')) { showErr(rootPathErr,'Base path must start with /sftp/.'); return; }
   if (!rootPath.endsWith('/')) { showErr(rootPathErr,'Base path must end with /.'); return; }
+  if (!sfId)   { showErr(sfIdErr,  'Salesforce ID is required.'); return; }
+  if (!sfName) { showErr(sfNameErr,'Salesforce Name is required.'); return; }
 
   if (CURRENT_CONFIG_ID === null) {
     const newId = Math.max(...CONFIGS.map(c => c.id)) + 1;
-    CONFIGS.push({ id: newId, name, type, rootPath, active: true, modified: nowStr(), by: 'you' });
+    CONFIGS.push({ id: newId, name, type, rootPath, sfId, sfName, active: true, modified: nowStr(), by: 'you' });
     CURRENT_CONFIG_ID = newId;
     DETAIL_DATA[newId] = CURRENT_DETAIL;
     renderConfigs();
   } else {
     const cfg = CONFIGS.find(c => c.id === CURRENT_CONFIG_ID);
-    cfg.name = name; cfg.type = type; cfg.rootPath = rootPath; cfg.modified = nowStr(); cfg.by = 'you';
+    cfg.name = name; cfg.type = type; cfg.rootPath = rootPath; cfg.sfId = sfId; cfg.sfName = sfName; cfg.modified = nowStr(); cfg.by = 'you';
   }
   CURRENT_DETAIL.entityType       = entityType;
   CURRENT_DETAIL.entityTypeLocked = true;
