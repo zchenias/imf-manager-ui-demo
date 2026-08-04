@@ -1118,6 +1118,15 @@
         <div class="form-hint" id="delivery-dest-hint"></div>
         <div class="form-error" id="delivery-error"></div>
       </div>
+      <div class="form-field d-none" id="cloud-platform-field">
+        <label class="form-label">Client Cloud Platform <span class="required">*</span></label>
+        <select id="delivery-cloud-platform" class="form-select">
+          <option value="none">None</option>
+          <option value="S3">S3</option>
+          <option value="GCP">GCP</option>
+        </select>
+        <div class="form-hint" id="cloud-platform-note">Delivering to a client cloud platform requires a separate setup with the OPS team.</div>
+      </div>
 
       <div class="modal-footer">
         <button class="btn btn-default" onclick="closeModal('modal-add-delivery')">Cancel</button>
@@ -2877,7 +2886,9 @@ function showAddDeliveryModal() {
   el('delivery-modal-title').textContent  = 'Add Delivery';
   el('delivery-modal-submit').textContent = 'Add';
   ['delivery-format','delivery-method'].forEach(id => el(id).value = '');
-  el('delivery-destination').value   = '';
+  el('delivery-destination').value        = '';
+  el('delivery-cloud-platform').value     = 'none';
+  el('cloud-platform-field').classList.add('d-none');
 
   el('delivery-error').classList.remove('visible');
   onDeliveryFormatChange();
@@ -2892,6 +2903,7 @@ function showEditDeliveryModal(idx) {
   el('delivery-format').value            = d.format;
   el('delivery-method').value            = d.method;
   el('delivery-destination').value       = d.destination;
+  el('delivery-cloud-platform').value    = d.cloudPlatform || 'none';
 
   el('delivery-error').classList.remove('visible');
   onDeliveryFormatChange();
@@ -2925,6 +2937,8 @@ function onDeliveryFormatChange() {
     destEl.value       = 'delta_sharing';
     destEl.disabled    = true;
     hint.textContent   = 'table format always uses delta_sharing for both method and destination.';
+    el('cloud-platform-field').classList.add('d-none');
+    el('delivery-cloud-platform').value = 'none';
   } else {
     methodSel.disabled = false;
     destEl.disabled    = false;
@@ -2944,11 +2958,16 @@ function updateDeliveryDestHint() {
   el('delivery-dest-hint').innerHTML = `Appended to the config base path. Full path: <code>${preview}</code>`;
 }
 
+
 function onDeliveryMethodChange() {
   const method = el('delivery-method').value;
   const dest   = el('delivery-destination').value.trim();
   const hint   = el('delivery-dest-hint');
   const errEl  = el('delivery-error');
+  el('cloud-platform-field').classList.toggle('d-none', method !== 'sftp');
+  if (method !== 'sftp') {
+    el('delivery-cloud-platform').value = 'none';
+  }
   if (method === 'sftp') {
     updateDeliveryDestHint();
 
@@ -2972,9 +2991,10 @@ function onDeliveryMethodChange() {
 }
 
 function submitDelivery() {
-  const format    = el('delivery-format').value;
-  const method    = el('delivery-method').value;
-  const dest      = el('delivery-destination').value.trim();
+  const format        = el('delivery-format').value;
+  const method        = el('delivery-method').value;
+  const dest          = el('delivery-destination').value.trim();
+  const cloudPlatform = method === 'sftp' ? el('delivery-cloud-platform').value : 'none';
 
   const errEl     = el('delivery-error');
   if (!format || !method || !dest) { showErr(errEl, 'All fields are required.'); return; }
@@ -2996,9 +3016,9 @@ function submitDelivery() {
   const deliveries = CURRENT_DETAIL.subscriptions[ACTIVE_SUB_IDX].deliveries;
   if (DELIVERY_EDIT_IDX === null) {
     const newId = deliveries.length ? Math.max(...deliveries.map(d=>d.id))+1 : 1;
-    deliveries.push({id:newId, is_active:true, format, method, destination:dest});
+    deliveries.push({id:newId, is_active:true, format, method, destination:dest, cloudPlatform});
   } else {
-    Object.assign(deliveries[DELIVERY_EDIT_IDX], {format, method, destination:dest});
+    Object.assign(deliveries[DELIVERY_EDIT_IDX], {format, method, destination:dest, cloudPlatform});
   }
   closeModal('modal-add-delivery');
   renderDeliveries();
