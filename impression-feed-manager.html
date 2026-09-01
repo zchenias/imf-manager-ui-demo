@@ -640,11 +640,6 @@
             <div class="form-hint d-none" id="sf-validate-status"></div>
             <div class="form-error" id="detail-sf-id-error"></div>
           </div>
-          <div class="form-field">
-            <label class="form-label">Salesforce Name <span class="required">*</span></label>
-            <input id="detail-sf-name" class="form-input" type="text" maxlength="200" oninput="GENERAL_DIRTY=true" />
-            <div class="form-error" id="detail-sf-name-error"></div>
-          </div>
         </div>
 
         <div class="mt-16">
@@ -1853,7 +1848,6 @@ function openNewConfig() {
   el('detail-name').value      = '';
   el('detail-root-path').value = '';
   el('detail-sf-id').value     = '';
-  el('detail-sf-name').value   = '';
   clearSfValidation();
   ['detail-name-error','detail-type-error','entity-type-error','detail-root-path-error'].forEach(id =>
     el(id).classList.remove('visible'));
@@ -2148,7 +2142,6 @@ function openConfigDetail(configId) {
   el('detail-name').value      = cfg.name;
   el('detail-root-path').value = cfg.rootPath || '';
   el('detail-sf-id').value     = cfg.sfId   || '';
-  el('detail-sf-name').value   = cfg.sfName || '';
   clearSfValidation();
   el('detail-name-error').classList.remove('visible');
   el('detail-type-error').classList.remove('visible');
@@ -2324,16 +2317,14 @@ function saveSetupTab(btn) {
   const entityType = el('entity-type-select').value;
   const rootPath   = el('detail-root-path').value.trim();
   const sfId       = el('detail-sf-id').value.trim();
-  const sfName     = el('detail-sf-name').value.trim();
   const nameErr     = el('detail-name-error');
   const typeErr     = el('detail-type-error');
   const etErr       = el('entity-type-error');
   const rootPathErr = el('detail-root-path-error');
   const sfIdErr     = el('detail-sf-id-error');
-  const sfNameErr   = el('detail-sf-name-error');
   nameErr.classList.remove('visible'); typeErr.classList.remove('visible');
   etErr.classList.remove('visible');   rootPathErr.classList.remove('visible');
-  sfIdErr.classList.remove('visible'); sfNameErr.classList.remove('visible');
+  sfIdErr.classList.remove('visible');
 
   if (!name) { showErr(nameErr,'Name is required.'); return; }
   if (!/^[A-Za-z0-9_-]+$/.test(name)) { showErr(nameErr,'Allowed: A-Z, a-z, 0-9, underscore, hyphen.'); return; }
@@ -2352,17 +2343,16 @@ function saveSetupTab(btn) {
   if (!rootPath.startsWith('/sftp/')) { showErr(rootPathErr,'Base path must start with /sftp/.'); return; }
   if (!rootPath.endsWith('/')) { showErr(rootPathErr,'Base path must end with /.'); return; }
   if (!sfId)   { showErr(sfIdErr,  'Salesforce ID is required.'); return; }
-  if (!sfName) { showErr(sfNameErr,'Salesforce Name is required.'); return; }
 
   if (CURRENT_CONFIG_ID === null) {
     const newId = Math.max(...CONFIGS.map(c => c.id)) + 1;
-    CONFIGS.push({ id: newId, name, type, rootPath, sfId, sfName, active: true, modified: nowStr(), by: 'you' });
+    CONFIGS.push({ id: newId, name, type, rootPath, sfId, active: true, modified: nowStr(), by: 'you' });
     CURRENT_CONFIG_ID = newId;
     DETAIL_DATA[newId] = CURRENT_DETAIL;
     renderConfigs();
   } else {
     const cfg = CONFIGS.find(c => c.id === CURRENT_CONFIG_ID);
-    cfg.name = name; cfg.type = type; cfg.rootPath = rootPath; cfg.sfId = sfId; cfg.sfName = sfName; cfg.modified = nowStr(); cfg.by = 'you';
+    cfg.name = name; cfg.type = type; cfg.rootPath = rootPath; cfg.sfId = sfId; cfg.modified = nowStr(); cfg.by = 'you';
   }
   CURRENT_DETAIL.entityType       = entityType;
   CURRENT_DETAIL.entityTypeLocked = true;
