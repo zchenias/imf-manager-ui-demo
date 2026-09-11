@@ -376,6 +376,7 @@
       <div class="sidebar-item" id="nav-delivery-methods" onclick="guardedNavigate(()=>showRefData('refDeliveryMethods','Delivery Methods','Delivery Method'))">Delivery Methods</div>
       <div class="sidebar-item" id="nav-field-tiers"      onclick="guardedNavigate(()=>showRefData('refFieldTiers','Field Tiers','Field Tier'))">Field Tiers</div>
       <div class="sidebar-item" id="nav-field-categories" onclick="guardedNavigate(()=>showRefData('refFieldCategories','Field Categories','Field Category'))">Field Categories</div>
+      <div class="sidebar-item" id="nav-client-cloud"    onclick="guardedNavigate(()=>showRefData('refClientCloud','Client Cloud','Client Cloud'))">Client Cloud</div>
     </div>
   </nav>
 
@@ -1369,7 +1370,8 @@ const REF = {
   refFileFormats:    [{id:1,name:'table',created:'2024-01-15'},{id:2,name:'csv',created:'2024-01-15'},{id:3,name:'parquet',created:'2024-01-15'},{id:4,name:'json',created:'2024-01-15'},{id:5,name:'avro',created:'2024-01-15'}],
   refDeliveryMethods:[{id:1,name:'delta_sharing',created:'2024-01-15'},{id:2,name:'sftp',created:'2024-01-15'}],
   refFieldTiers:      [{id:1,name:'basic',created:'2026-06-15'},{id:2,name:'premium',created:'2026-06-15'},{id:3,name:'restricted',created:'2026-06-15'}],
-  refFieldCategories: [{id:1,name:'general',created:'2026-06-19'},{id:2,name:'viewability',created:'2026-06-19'},{id:3,name:'fraud',created:'2026-06-19'},{id:4,name:'brand_safety',created:'2026-06-19'},{id:5,name:'brand_suitability',created:'2026-06-19'}],
+  refFieldCategories: [{id:1,name:'general',created:'2026-06-19'},{id:2,name:'geo',created:'2026-06-19'},{id:3,name:'viewability',created:'2026-06-19'},{id:4,name:'fraud',created:'2026-06-19'},{id:5,name:'brand safety',created:'2026-06-19'},{id:6,name:'custom viewability',created:'2026-06-19'},{id:7,name:'attention',created:'2026-06-19'}],
+  refClientCloud:     [{id:1,name:'s3',created:'2026-09-01'},{id:2,name:'gcp',created:'2026-09-01'}],
 };
 
 // Hardcoded business rule: which entity types are valid per config type.
@@ -1427,6 +1429,7 @@ function showRefData(key, title, label) {
     refConfigTypes:'nav-config-types', refEntityTypes:'nav-entity-types',
     refDatasetTypes:'nav-dataset-types', refFileFormats:'nav-file-formats',
     refDeliveryMethods:'nav-delivery-methods', refFieldTiers:'nav-field-tiers', refFieldCategories:'nav-field-categories',
+    refClientCloud:'nav-client-cloud',
   }[key];
   el(navId).classList.add('active');
   el('ref-data-title').textContent = title;
